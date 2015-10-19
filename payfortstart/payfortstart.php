@@ -40,7 +40,7 @@ class PayfortStart extends PaymentModule {
         parent::__construct();
 
         $this->displayName = 'Payfort Start Payments';
-        $this->description = $this->l('Receive payment with Credit or Dabit Card');
+        $this->description = $this->l('Receive payment with Credit or Debit Card');
 
 
         /* For 1.4.3 and less compatibility */

@@ -3,7 +3,7 @@
 	<name>payfortstart</name>
 	<displayName><![CDATA[Payfort Start Payments]]></displayName>
 	<version><![CDATA[1.0.0]]></version>
-	<description><![CDATA[Receive payment with Credit or Dabit Card]]></description>
+	<description><![CDATA[Receive payment with Credit or Debit Card]]></description>
 	<author><![CDATA[PrestaShop]]></author>
 	<tab><![CDATA[payments_gateways]]></tab>
 	<is_configurable>1</is_configurable>
