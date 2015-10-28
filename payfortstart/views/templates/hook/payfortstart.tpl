@@ -10,8 +10,7 @@
                <input name="x_invoice_num" type="hidden" value="{$x_invoice_num}">
                  <input name="amount" type="hidden" value="{$amount}">
                 <p class="payment_module">
-                    <a id="click_payfortstart" title="{l s='Pay with PayfortStart' mod='payfortstart'}" style="display: block; cursor:pointer;">
-                       <img src="{$module_dir}img/cc.png"/>
+<a id="click_payfortstart" title="{l s='Pay with PayfortStart' mod='payfortstart'}" style="display: block;text-decoration: none; cursor:pointer; font-weight: bold;background:url(modules/payfortstart/img/cc.png) 15px 15px no-repeat #fbfbfb">
                         Pay With Debit/Credit Card		
                     </a>
                 </p>
