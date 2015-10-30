@@ -130,7 +130,8 @@ class PayfortStart extends PaymentModule {
 
     public function getContent() {
         $html = '';
-        if (Tools::isSubmit('submitModule')) {
+ $currencies = Currency::getCurrencies(false, true);    
+    if (Tools::isSubmit('submitModule')) {
             $payfort_start_mode = (int) Tools::getvalue('payfort_start_mode');
             if ($payfort_start_mode == 1) {
                 Configuration::updateValue('PAYFORT_START_TEST_MODE', 1);
