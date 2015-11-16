@@ -89,7 +89,7 @@ try {
     $url = 'index.php?controller=order-confirmation&';
     if (_PS_VERSION_ < '1.5')
         $url = 'order-confirmation.php?';
-    $payfortstart->validateOrder((int) $cart->id, Configuration::get('PAYFORT_START_HOLD_REVIEW_OS'), (float) $amount, "payfort start", "message", NULL, NULL, false, $customer->secure_key);
+    $payfortstart->validateOrder((int) $cart->id, Configuration::get('PAYFORT_START_HOLD_REVIEW_OS'), (float) $amount, "credit/debit card", "message", NULL, NULL, false, $customer->secure_key);
     $auth_order = new Order($payfortstart->currentOrder);
     Tools::redirect($url . 'id_module=' . (int) $payfortstart->id . '&id_cart=' . (int) $cart->id . '&key=' . $auth_order->secure_key);
 } catch (Start_Error_Banking $e) {
