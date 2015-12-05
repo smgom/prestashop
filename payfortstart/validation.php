@@ -1,35 +1,41 @@
 <?php
+
 /*
-* 2007-2013 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2013 PrestaShop SA
-*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
+ * 2007-2013 PrestaShop
+ *
+ * NOTICE OF LICENSE
+ *
+ * This source file is subject to the Academic Free License (AFL 3.0)
+ * that is bundled with this package in the file LICENSE.txt.
+ * It is also available through the world-wide-web at this URL:
+ * http://opensource.org/licenses/afl-3.0.php
+ * If you did not receive a copy of the license and are unable to
+ * obtain it through the world-wide-web, please send an email
+ * to license@prestashop.com so we can send you a copy immediately.
+ *
+ * DISCLAIMER
+ *
+ * Do not edit or add to this file if you wish to upgrade PrestaShop to newer
+ * versions in the future. If you wish to customize PrestaShop for your
+ * needs please refer to http://www.prestashop.com for more information.
+ *
+ *  @author PrestaShop SA <contact@prestashop.com>
+ *  @copyright  2007-2013 PrestaShop SA
+ *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ *  International Registered Trademark & Property of PrestaShop SA
+ */
 
-include(dirname(__FILE__). '/../../config/config.inc.php');
+include(dirname(__FILE__) . '/../../config/config.inc.php');
 
-include(dirname(__FILE__). '/../../init.php');
+function pr($data) {
+    echo "<pre>";
+    print_r($data);
+    echo "<pre>";
+}
+include(dirname(__FILE__) . '/../../init.php');
 
 /* will include backward file */
-include(dirname(__FILE__). '/payfortstart.php');
+include(dirname(__FILE__) . '/payfortstart.php');
 
 $payfortstart = new PayfortStart();
 
@@ -54,6 +60,7 @@ if ($cart->id != $_POST['x_invoice_num']) {
 $customer = new Customer((int) $cart->id_customer);
 $invoiceAddress = new Address((int) $cart->id_address_invoice);
 $currency = new Currency((int) $cart->id_currency);
+
 if (!Validate::isLoadedObject($customer) || !Validate::isLoadedObject($invoiceAddress) && !Validate::isLoadedObject($currency)) {
     Logger::addLog('Issue loading customer, address and/or currency data');
     die('An unrecoverable error occured while retrieving you data');
@@ -72,19 +79,72 @@ $order_description = "Charge for order";
 $order_id = $_POST['x_invoice_num'];
 $email = $_POST['payment_email'];
 $amount = $_POST['amount'];
+include (dirname(__FILE__) . '/vendor/payfort/start/Start.php');
+$userAgent = 'Prestashop ' . _PS_VERSION_ . ' / Start Plugin ' . $payfortstart->version;
+Start::setUserAgent($userAgent);
+Start::setApiKey($start_payments_secret_api);
+$delivery_address = new Address(intval($cart->id_address_delivery));
+$shipping_address = array(
+    "first_name" => $delivery_address->firstname,
+    "last_name" => $delivery_address->lastname,
+    "country" => $delivery_address->country,
+    "city" => $delivery_address->city,
+    "address_1" => $delivery_address->address1,
+    "address_2" => $delivery_address->address2,
+    "phone" => $delivery_address->phone,
+    "postcode" => $delivery_address->postcode
+);
+
+$billing_address = array(
+    "first_name" => $invoiceAddress->firstname,
+    "last_name" => $invoiceAddress->lastname,
+    "country" => $invoiceAddress->country,
+    "city" => $invoiceAddress->city,
+    "address_1" => $invoiceAddress->address1,
+    "address_2" => $invoiceAddress->address2,
+    "phone" => $invoiceAddress->phone,
+    "postcode" => $invoiceAddress->postcode
+);
+if (file_exists(dirname(__FILE__) . '/data/currencies.json')) {
+    $currency_json_data = json_decode(file_get_contents(dirname(__FILE__) . '/data/currencies.json'), 1);
+    $currency_multiplier = $currency_json_data[$currency->iso_code];
+} else {
+    $currency_multiplier = 100;
+}
+$amount_in_cents = $amount * $currency_multiplier;
+$customer = new Customer((int) $cart->id_customer);
+$registered_at = ($customer->is_guest == 0) ? date(DATE_ISO8601, strtotime(date("Y-m-d H:i:s"))) : date(DATE_ISO8601, strtotime($customer->date_add));
+$products = $cart->getProducts(true);
+$order_items_array_full = array();
+foreach ($products as $key => $items) {
+    $order_items_array['title'] = $items['name'];
+    $order_items_array['amount'] = round($items['price'], 2) * $currency_multiplier;
+    $order_items_array['quantity'] = $items['quantity'];
+    array_push($order_items_array_full, $order_items_array);
+}
+$shopping_cart_array = array(
+    'user_name' => $customer->firstname,
+    'registered_at' => $registered_at,
+    'items' => $order_items_array_full,
+    'billing_address' => $billing_address,
+    'shipping_address' => $shipping_address
+);
+$shipping_cost =  $cart->getTotalShippingCost()*$currency_multiplier;
 $charge_args = array(
     'description' => $order_description . ': ' . $order_id, // only 255 chars
     'card' => $_POST['payment_token'],
-    'currency' =>  $currency->iso_code, // only USD and AED are supported
+    'currency' => $currency->iso_code,
     'email' => $email,
     'ip' => $_SERVER["REMOTE_ADDR"],
-    'amount' => $amount*100,
-    'capture' => $capture
+    'amount' => $amount_in_cents,
+    'capture' => $capture,
+    'shopping_cart' => $shopping_cart_array,
+    'shipping_amount' => $shipping_cost,
+    'metadata' => array('reference_id' => $order_id)
 );
-include (dirname(__FILE__). '/vendor/payfort/start/Start.php');
-Start::setApiKey($start_payments_secret_api);
 $json = array();
 try {
+    pr($charge_args);
     $charge = Start_Charge::create($charge_args);
     $url = 'index.php?controller=order-confirmation&';
     if (_PS_VERSION_ < '1.5')

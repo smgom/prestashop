@@ -33,9 +33,8 @@ class PayfortStart extends PaymentModule {
     public function __construct() {
         $this->name = 'payfortstart';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.0';
+        $this->version = '1.2';
         $this->author = 'PrestaShop';
-        $this->start_available_currencies = array('USD', 'AUD', 'CAD', 'EUR', 'GBP', 'NZD');
 
         parent::__construct();
 
@@ -72,7 +71,6 @@ class PayfortStart extends PaymentModule {
 
         /* Backward compatibility */
         require(_PS_MODULE_DIR_ . $this->name . '/backward_compatibility/backward.php');
-
     }
 
     public function install() {
@@ -94,15 +92,6 @@ class PayfortStart extends PaymentModule {
         Configuration::deleteByName('PAYFORT_START_LIVE_SECRET_KEY');
         Configuration::deleteByName('PAYFORT_START_LIVE_SECRET_KEY');
         Configuration::deleteByName('PAYFORT_START_HOLD_REVIEW_OS');
-
-        /* Removing credentials configuration variables */
-        $currencies = Currency::getCurrencies(false, true);
-        foreach ($currencies as $currency)
-            if (in_array($currency['iso_code'], $this->start_available_currencies)) {
-                Configuration::deleteByName('PAYFORT_START_LOGIN_ID_' . $currency['iso_code']);
-                Configuration::deleteByName('PAYFORT_START_KEY_' . $currency['iso_code']);
-            }
-
         return parent::uninstall();
     }
 
@@ -130,8 +119,7 @@ class PayfortStart extends PaymentModule {
 
     public function getContent() {
         $html = '';
- $currencies = Currency::getCurrencies(false, true);    
-    if (Tools::isSubmit('submitModule')) {
+        if (Tools::isSubmit('submitModule')) {
             $payfort_start_mode = (int) Tools::getvalue('payfort_start_mode');
             if ($payfort_start_mode == 1) {
                 Configuration::updateValue('PAYFORT_START_TEST_MODE', 1);
@@ -154,8 +142,6 @@ class PayfortStart extends PaymentModule {
         // For "Hold for Review" order status
         $order_states = OrderState::getOrderStates((int) $this->context->cookie->id_lang);
         $this->context->smarty->assign(array(
-            'available_currencies' => $this->start_available_currencies,
-            'currencies' => $currencies,
             'module_dir' => $this->_path,
             'order_states' => $order_states,
             'PAYFORT_START_TEST_MODE' => Configuration::get('PAYFORT_START_TEST_MODE'),
@@ -193,13 +179,19 @@ class PayfortStart extends PaymentModule {
         $invoiceAddress = new Address((int) $cart->id_address_invoice);
         $currency = new Currency((int) $cart->id_currency);
         $amount = number_format((float) $cart->getOrderTotal(true, 3), 2, '.', '');
-        $amount_in_cents = $amount * 100;
+        if (file_exists(dirname(__FILE__) . '/data/currencies.json')) {
+            $currency_json_data = json_decode(file_get_contents(dirname(__FILE__) . '/data/currencies.json'), 1);
+            $currency_multiplier = $currency_json_data[$currency->iso_code];
+        } else {
+            $currency_multiplier = 100;
+        }
+        $amount_in_cents = $amount * $currency_multiplier;
         $this->context->smarty->assign('email', $customer->email);
         $this->context->smarty->assign('currency', $currency->iso_code);
         $this->context->smarty->assign('amount', $amount);
-         $this->context->smarty->assign('amount_in_cents', $amount_in_cents);
+        $this->context->smarty->assign('amount_in_cents', $amount_in_cents);
         $this->context->smarty->assign('isFailed', $isFailed);
-        
+        $this->context->smarty->assign('ps_vesion', _PS_VERSION_);
         $this->context->smarty->assign('x_invoice_num', (int) $params['cart']->id);
         return $this->display(__FILE__, 'views/templates/hook/payfortstart.tpl');
     }
@@ -210,4 +202,5 @@ class PayfortStart extends PaymentModule {
         else
             $this->context->controller->addJqueryPlugin('validate-creditcard');
     }
+
 }
