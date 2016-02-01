@@ -11,8 +11,7 @@
                 <input name="x_invoice_num" type="hidden" value="{$x_invoice_num}">
                 <input name="amount" type="hidden" value="{$amount}">
                 <p class="payment_module">
-                    <a id="click_payfortstart" title="{l s='Pay with PayfortStart' mod='payfortstart'}" 
-                       style="display: solid;text-decoration: none; cursor:pointer; font-weight: bold;background:url(modules/payfortstart/img/cc.png) 15px 15px no-repeat #fbfbfb">
+                   <a id="click_payfortstart" title="{l s='Pay with PayfortStart' mod='payfortstart'}" style="display: block;text-decoration: none; cursor:pointer; font-weight: bold;background:url({$module_dir}img/cc.png)) 15px 15px no-repeat #fbfbfb">
                         Pay With Debit/Credit Card		
                     </a>
                 </p>
@@ -46,7 +45,6 @@
 </p><script type="text/javascript">
     function submitFormWithToken(param) {
         removePaymentToken();
-    {*        $('#payfortstart_form').append("<span class='start_response'><br>Your Card: xxxx-xxxx-xxxx-<b>" + param.token.card.last4 + "</b> <a href='javascript:void(0)' onclick=removePaymentToken();>(Clear)</a></span>");*}
         $('#payfortstart_form').append("<span class='start_response'><img src='modules/payfortstart/img/widget-loading.gif' /></span>");
         $('#payfortstart_form').parent().find(".start_response").append("<input type = 'hidden' name='payment_token' value = " + param.token.id + "><input type = 'hidden' name='payment_email' value = " + param.email + ">");
         $('#payfortstart_form').trigger('submit');
