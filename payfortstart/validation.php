@@ -144,7 +144,6 @@ $charge_args = array(
 );
 $json = array();
 try {
-    pr($charge_args);
     $charge = Start_Charge::create($charge_args);
     $url = 'index.php?controller=order-confirmation&';
     if (_PS_VERSION_ < '1.5')
